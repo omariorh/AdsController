@@ -1,0 +1,3 @@
+rootProject.name='adscontrol'
+include ':app'
+include ':ads'

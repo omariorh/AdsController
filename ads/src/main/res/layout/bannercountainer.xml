@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout android:id="@+id/separator"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_marginTop="10dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:visibility="gone"
+        android:background="#FFFFFF">
+
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/bnrlinear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:visibility="gone"
+        android:orientation="horizontal"
+        tools:layout_editor_absoluteX="0dp">
+
+        <LinearLayout
+            android:id="@+id/adlinear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="horizontal" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/banner_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        />
+
+    <RelativeLayout
+        android:layout_gravity="center"
+        android:layout_width="match_parent"
+        android:id="@+id/relt"
+        android:visibility="gone"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        android:layout_height="80dp">
+        <ImageView
+            android:id="@+id/fakebnr"
+            android:scaleType="fitXY"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+        <ImageView
+            android:id="@+id/fkpolicyimgbnr"
+            android:layout_width="60dp"
+            android:visibility="gone"
+            android:background="@drawable/ajorads"
+            android:layout_alignParentBottom="true"
+            android:scaleType="fitXY"
+            android:alpha="0.8"
+            android:onClick="fkpolicypolicy"
+            android:layout_height="13dp" />
+        <ImageView
+            android:id="@+id/addbnr"
+            android:onClick="addbnr"
+            android:background="@drawable/add"
+            android:layout_alignParentBottom="true"
+            android:scaleType="fitXY"
+            android:layout_width="18dp"
+            android:layout_height="13dp" />
+    </RelativeLayout>
+
+
+</LinearLayout>
