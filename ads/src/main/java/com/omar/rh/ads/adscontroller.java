@@ -84,9 +84,6 @@ public class adscontroller extends AppCompatActivity{
     private com.facebook.ads.AdView adView;
     Boolean isFaceBanner = false;
 
-
-    public RelativeLayout relat;
-
     public LinearLayout nativecont;
     private adsCallback adsCallback;
 
@@ -220,7 +217,6 @@ public class adscontroller extends AppCompatActivity{
 
     private void callFaceBanner() {
         isFaceBanner = true;
-        relat.setVisibility(View.GONE);
         bnlinear.setVisibility(View.GONE);
         adContainer.setVisibility(View.VISIBLE);
         separator.setVisibility(View.VISIBLE);
@@ -243,7 +239,6 @@ public class adscontroller extends AppCompatActivity{
             public void onAdLoaded(Ad ad) {
                 // Ad loaded callback
                 if (isFaceBanner){
-                    relat.setVisibility(View.GONE);
                     bnlinear.setVisibility(View.GONE);
                     adContainer.setVisibility(View.VISIBLE);
                     separator.setVisibility(View.VISIBLE);
