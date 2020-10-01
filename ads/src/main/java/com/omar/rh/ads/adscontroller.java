@@ -53,6 +53,7 @@ import static com.omar.rh.ads.units.nativeTimer;
 import static com.omar.rh.ads.units.statut;
 import static com.omar.rh.ads.units.limitAdmobBannerClicks;
 import static com.omar.rh.ads.units.bannerTimer;
+import static com.omar.rh.ads.units.userInterval;
 
 public class adscontroller extends AppCompatActivity{
 
@@ -335,33 +336,41 @@ public class adscontroller extends AppCompatActivity{
     }
 
     private void immediateAds(int statut) {
-        switch (statut) {
-            case 1:
-                if (limitAdmobInterClicks) {
-                    int interNumClick = tinyDB.getInt("interNumClick", 0);
-                    if (interNumClick < interMaxNum) {
-                        callAdmobInter();
-                    } else {
-                        long interSavedTime = tinyDB.getLong("interTimerMili", 0L);
-                        if (System.currentTimeMillis() >= interSavedTime + (long)(interTimer * 1000)) {
-                            tinyDB.putInt("interNumClick", 0);
+        if (interval > userInterval){
+            interval = 1;
+        }
+        if (userInterval == interval || userInterval == 0) {
+            switch (statut) {
+                case 1:
+                    if (limitAdmobInterClicks) {
+                        int interNumClick = tinyDB.getInt("interNumClick", 0);
+                        if (interNumClick < interMaxNum) {
                             callAdmobInter();
-                        }else{
-                            callFaceInter();
+                        } else {
+                            long interSavedTime = tinyDB.getLong("interTimerMili", 0L);
+                            if (System.currentTimeMillis() >= interSavedTime + (long) (interTimer * 1000)) {
+                                tinyDB.putInt("interNumClick", 0);
+                                callAdmobInter();
+                            } else {
+                                callFaceInter();
+                            }
                         }
+                    } else {
+                        callAdmobInter();
                     }
-                } else {
-                    callAdmobInter();
-                }
 
-                break;
-            case 2:
-                callFaceInter();
-                break;
-            default:
-                interCallBack();
-                loadInterAds();
-                interval = 1;
+                    break;
+                case 2:
+                    callFaceInter();
+                    break;
+                default:
+                    interCallBack();
+                    loadInterAds();
+                    interval = 1;
+            }
+        }else{
+            interCallBack();
+            loadInterAds();
         }
     }
 
@@ -388,6 +397,7 @@ public class adscontroller extends AppCompatActivity{
             interCallBack();
             loadInterAds();
         }
+        interval++;
     }
 
     private void callFaceInter(){
@@ -424,6 +434,7 @@ public class adscontroller extends AppCompatActivity{
             interCallBack();
             loadInterAds();
         }
+        interval++;
     }
     public void admBnr() {
         if (limitAdmobBannerClicks) {
@@ -765,6 +776,11 @@ public class adscontroller extends AppCompatActivity{
 //
         public config statut(int statut) {
             units.statut = statut;
+            return this;
+        }
+
+        public config interval(int userInterval) {
+            units.userInterval = userInterval;
             return this;
         }
 

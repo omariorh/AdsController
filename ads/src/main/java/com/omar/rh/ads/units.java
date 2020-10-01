@@ -29,6 +29,7 @@ public class units {
 
 
     public static int interval = 1;
+    public static int userInterval = 0;
     public static int LoadingTime = 2000;
     public static Boolean actionable = true;
 
