@@ -33,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
                 .admob_native("ca-app-pub-3940256099942544/2247696110")
                 .fb_inter("")
                 .Fb_banner("")
-                .fb_native("");
+                .fb_native("")
+                .interval(5);
 
         ads.init();
         ads.showBanners();
@@ -41,11 +42,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void clickme(View view) {
-        ads.callBack(2,new adscontroller.adsCallback() {
+        ads.callBack(new adscontroller.adsCallback() {
             @Override
             public void adscall() {
-                ads.showNative();
-                ads.showBanners();
             }
         });
 //                Intent intent = new Intent(MainActivity.this,MainActivity.class);

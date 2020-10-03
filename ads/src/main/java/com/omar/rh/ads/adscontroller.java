@@ -366,12 +366,12 @@ public class adscontroller extends AppCompatActivity{
                 default:
                     interCallBack();
                     loadInterAds();
-                    interval = 1;
             }
         }else{
             interCallBack();
             loadInterAds();
         }
+        interval++;
     }
 
     private void callAdmobInter(){
@@ -397,7 +397,6 @@ public class adscontroller extends AppCompatActivity{
             interCallBack();
             loadInterAds();
         }
-        interval++;
     }
 
     private void callFaceInter(){
@@ -434,7 +433,6 @@ public class adscontroller extends AppCompatActivity{
             interCallBack();
             loadInterAds();
         }
-        interval++;
     }
     public void admBnr() {
         if (limitAdmobBannerClicks) {
