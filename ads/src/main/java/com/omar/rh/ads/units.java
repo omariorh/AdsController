@@ -11,6 +11,13 @@ public class units {
     public static String Fb_inter = "";
     public static String Fb_banner = "";
     public static String Fb_native = "";
+    public static String iron_appkey = "";
+    public static String iron_inter = "";
+    public static String iron_banner = "";
+    public static String mopub_inter = "";
+    public static String mopub_reward = "";
+    public static String mopub_banner = "";
+
     public static int statut = 0;
 
     public static Boolean limitAdmobBannerClicks = false;

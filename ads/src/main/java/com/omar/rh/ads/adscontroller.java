@@ -9,8 +9,9 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.facebook.ads.Ad;
 import com.facebook.ads.AdError;
 import com.facebook.ads.AdOptionsView;
@@ -28,6 +29,19 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
 import com.google.android.gms.ads.formats.UnifiedNativeAd;
 import com.google.android.gms.ads.formats.UnifiedNativeAdView;
+import com.ironsource.mediationsdk.ISBannerSize;
+import com.ironsource.mediationsdk.IronSource;
+import com.ironsource.mediationsdk.IronSourceBannerLayout;
+import com.ironsource.mediationsdk.integration.IntegrationHelper;
+import com.ironsource.mediationsdk.logger.IronSourceError;
+import com.ironsource.mediationsdk.sdk.BannerListener;
+import com.ironsource.mediationsdk.sdk.InterstitialListener;
+import com.mopub.common.MoPub;
+import com.mopub.common.SdkConfiguration;
+import com.mopub.common.SdkInitializationListener;
+import com.mopub.mobileads.MoPubErrorCode;
+import com.mopub.mobileads.MoPubInterstitial;
+import com.mopub.mobileads.MoPubView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +49,8 @@ import java.util.List;
 import androidx.appcompat.app.AppCompatActivity;
 
 import static com.facebook.ads.AdSettings.IntegrationErrorMode.INTEGRATION_ERROR_CRASH_DEBUG_MODE;
+import static com.mopub.common.logging.MoPubLog.LogLevel.DEBUG;
+import static com.mopub.common.logging.MoPubLog.LogLevel.INFO;
 import static com.omar.rh.ads.units.Admob_app_id;
 import static com.omar.rh.ads.units.Admob_banner;
 import static com.omar.rh.ads.units.Admob_inter;
@@ -42,6 +58,12 @@ import static com.omar.rh.ads.units.Admob_native;
 import static com.omar.rh.ads.units.Fb_banner;
 import static com.omar.rh.ads.units.Fb_inter;
 import static com.omar.rh.ads.units.Fb_native;
+import static com.omar.rh.ads.units.iron_appkey;
+import static com.omar.rh.ads.units.iron_inter;
+import static com.omar.rh.ads.units.iron_banner;
+import static com.omar.rh.ads.units.mopub_inter;
+import static com.omar.rh.ads.units.mopub_reward;
+import static com.omar.rh.ads.units.mopub_banner;
 import static com.omar.rh.ads.units.bannerMaxNum;
 import static com.omar.rh.ads.units.interMaxNum;
 import static com.omar.rh.ads.units.interTimer;
@@ -55,7 +77,7 @@ import static com.omar.rh.ads.units.limitAdmobBannerClicks;
 import static com.omar.rh.ads.units.bannerTimer;
 import static com.omar.rh.ads.units.userInterval;
 
-public class adscontroller extends AppCompatActivity{
+public class adscontroller extends AppCompatActivity implements MoPubInterstitial.InterstitialAdListener{
 
     public String TAG = this.getClass().getSimpleName();
     private TinyDB tinyDB;
@@ -85,8 +107,15 @@ public class adscontroller extends AppCompatActivity{
     private com.facebook.ads.AdView adView;
     Boolean isFaceBanner = false;
 
+    IronSourceBannerLayout ironSourceBannerLayout;
+    LinearLayout IronbannerContainer;
+
     public LinearLayout nativecont;
     private adsCallback adsCallback;
+
+    //Mopub
+    private MoPubInterstitial mopubInterstitial;
+    private MoPubView bannerMoPub;
 
     public adscontroller(Context context) {
         this.context = context;
@@ -107,10 +136,84 @@ public class adscontroller extends AppCompatActivity{
         interstitialAd = new InterstitialAd(context);
         interstitialAd.setAdUnitId(Admob_inter);
 
+
+        //Iron Source
+        IronSource.init((Activity) context, iron_appkey, IronSource.AD_UNIT.OFFERWALL, IronSource.AD_UNIT.INTERSTITIAL, IronSource.AD_UNIT.REWARDED_VIDEO, IronSource.AD_UNIT.BANNER);
+        //Rewarded Video
+        IronSource.init((Activity) context, iron_appkey, IronSource.AD_UNIT.REWARDED_VIDEO);
+        //Init Interstitial
+        IronSource.init((Activity) context, iron_appkey, IronSource.AD_UNIT.INTERSTITIAL);
+        //Init Offerwall
+        IronSource.init((Activity) context, iron_appkey, IronSource.AD_UNIT.OFFERWALL);
+        //Init Banner
+        IronSource.init((Activity) context, iron_appkey,IronSource.AD_UNIT.BANNER);
+        final SdkConfiguration.Builder configBuilder = new SdkConfiguration.Builder(mopub_inter);
+
+        if (BuildConfig.DEBUG) {
+            configBuilder.withLogLevel(DEBUG);
+        } else {
+            configBuilder.withLogLevel(INFO);
+        }
+
+        MoPub.initializeSdk(context, configBuilder.build(), initSdkListener());
+        //mopub
+        mopubInterstitial = new MoPubInterstitial((Activity) context, mopub_inter);
+        mopubInterstitial.setInterstitialAdListener(this);
+
+
+
+
         setNative();
         setBanners();
         loadInterAds();
 
+        IntegrationHelper.validateIntegration(activity);
+
+        IronSource.getInterstitialPlacementInfo(iron_inter);
+        IronSource.setInterstitialListener(new InterstitialListener() {
+            @Override
+            public void onInterstitialAdReady() {
+                Log.d(TAG,"Iron Source: onInterstitialAdReady");
+            }
+            @Override
+            public void onInterstitialAdLoadFailed(IronSourceError error) {
+                Log.d(TAG,"Iron Source: onInterstitialAdLoadFailed");
+            }
+            @Override
+            public void onInterstitialAdOpened() {
+                Log.d(TAG,"Iron Source: onInterstitialAdOpened");
+            }
+            @Override
+            public void onInterstitialAdClosed() {
+                Log.d(TAG,"Iron Source: onInterstitialAdClosed");
+                interCallBack();
+                loadInterAds();
+            }
+            @Override
+            public void onInterstitialAdShowSucceeded() {
+                Log.d(TAG,"Iron Source: onInterstitialAdShowSucceeded");
+            }
+            @Override
+            public void onInterstitialAdShowFailed(IronSourceError error) {
+                Log.d(TAG,"Iron Source: onInterstitialAdShowFailed");
+            }
+            /*
+             * Invoked when the end user clicked on the interstitial ad.
+             */
+            @Override
+            public void onInterstitialAdClicked() {
+                Log.d(TAG,"Iron Source: onInterstitialAdClicked");
+            }
+        });
+
+    }
+
+    private SdkInitializationListener initSdkListener() {
+        return  new SdkInitializationListener() {
+            @Override
+            public void onInitializationFinished() {
+            }
+        };
     }
 
     private void interCallBack() {
@@ -181,6 +284,19 @@ public class adscontroller extends AppCompatActivity{
             mAdView2.setAdSize(com.google.android.gms.ads.AdSize.SMART_BANNER);
             mAdView2.setAdUnitId(Admob_banner);
             isBanner = true;
+
+            // -> IronSource
+            IronbannerContainer = this.activity.findViewById(R.id.iron_banner);
+            ironSourceBannerLayout = IronSource.createBanner((Activity) context, ISBannerSize.BANNER);
+            FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT);
+            IronbannerContainer.addView(ironSourceBannerLayout, 0, layoutParams);
+
+            // -> Mopub
+            bannerMoPub = this.activity.findViewById(R.id.mopub_banner);
+            bannerMoPub.setAdUnitId(mopub_banner);
+
+
         } catch (Exception e) {
             e.printStackTrace();
             isBanner = false;
@@ -204,11 +320,21 @@ public class adscontroller extends AppCompatActivity{
                     admBnr();
                     adContainer.setVisibility(View.GONE);
                     separator.setVisibility(View.VISIBLE);
+                    ironSourceBannerLayout.setVisibility(View.GONE);
+                    IronbannerContainer.setVisibility(View.GONE);
                     break;
                 case 2:
                     callFaceBanner();
                     break;
+                case 6:
+                    callIronBanner();
+                    break;
+                case 7:
+                    callMopubBanner();
+                    break;
                 default:
+                    bannerMoPub.setVisibility(View.GONE);
+                    IronbannerContainer.setVisibility(View.GONE);
                     adContainer.setVisibility(View.GONE);
                     bnlinear.setVisibility(View.GONE);
                     separator.setVisibility(View.GONE);
@@ -216,7 +342,46 @@ public class adscontroller extends AppCompatActivity{
         }
     }
 
+    private void callMopubBanner() {
+            IronbannerContainer.setVisibility(View.GONE);
+            isFaceBanner = false;
+            bnlinear.setVisibility(View.GONE);
+            adContainer.setVisibility(View.GONE);
+            separator.setVisibility(View.VISIBLE);
+            bannerMoPub.setVisibility(View.VISIBLE);
+            bannerMoPub.loadAd();
+            bannerMoPub.setBannerAdListener(new MoPubView.BannerAdListener() {
+                @Override
+                public void onBannerLoaded(MoPubView banner) {
+                    Log.d(TAG,"banner mopub: onBannerLoaded");
+                }
+
+                @Override
+                public void onBannerFailed(MoPubView banner, MoPubErrorCode errorCode) {
+                    bannerMoPub.loadAd();
+                    Log.d(TAG,"banner mopub: onBannerFailed");
+                }
+
+                @Override
+                public void onBannerClicked(MoPubView banner) {
+                    Log.d(TAG,"banner mopub: onBannerClicked");
+                }
+
+                @Override
+                public void onBannerExpanded(MoPubView banner) {
+                    Log.d(TAG,"banner mopub: onBannerExpanded");
+                }
+
+                @Override
+                public void onBannerCollapsed(MoPubView banner) {
+                    Log.d(TAG,"banner mopub: onBannerCollapsed");
+                }
+            });
+    }
+
     private void callFaceBanner() {
+        IronbannerContainer.setVisibility(View.GONE);
+        bannerMoPub.setVisibility(View.GONE);
         isFaceBanner = true;
         bnlinear.setVisibility(View.GONE);
         adContainer.setVisibility(View.VISIBLE);
@@ -240,6 +405,8 @@ public class adscontroller extends AppCompatActivity{
             public void onAdLoaded(Ad ad) {
                 // Ad loaded callback
                 if (isFaceBanner){
+                    IronbannerContainer.setVisibility(View.GONE);
+                    bannerMoPub.setVisibility(View.GONE);
                     bnlinear.setVisibility(View.GONE);
                     adContainer.setVisibility(View.VISIBLE);
                     separator.setVisibility(View.VISIBLE);
@@ -261,8 +428,90 @@ public class adscontroller extends AppCompatActivity{
                 hasAdView = 1;
             }
         };
-        adView.loadAd();
         adView.loadAd(adView.buildLoadAdConfig().withAdListener(adListener).build());
+    }
+
+    private void callIronBanner(){
+        IronbannerContainer.setVisibility(View.VISIBLE);
+        isFaceBanner = false;
+        bnlinear.setVisibility(View.GONE);
+        adContainer.setVisibility(View.GONE);
+        separator.setVisibility(View.VISIBLE);
+        bannerMoPub.setVisibility(View.GONE);
+        IronSource.loadBanner(ironSourceBannerLayout,iron_banner);
+
+        ironSourceBannerLayout.setBannerListener(new BannerListener() {
+            @Override
+            public void onBannerAdLoaded() {
+                IronbannerContainer.setVisibility(View.VISIBLE);
+                bannerMoPub.setVisibility(View.GONE);
+                Log.d(TAG,"iron banner: onBannerAdLoaded");
+            }
+
+            @Override
+            public void onBannerAdLoadFailed(IronSourceError error) {
+                Log.d(TAG,"iron banner: onBannerAdLoadFailed");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        IronbannerContainer.removeAllViews();
+                    }
+                });
+            }
+
+            @Override
+            public void onBannerAdClicked() {
+                Log.d(TAG,"iron banner: onBannerAdClicked");
+            }
+
+            @Override
+            public void onBannerAdScreenPresented() {
+                Log.d(TAG,"iron banner: onBannerAdScreenPresented");
+            }
+
+            @Override
+            public void onBannerAdScreenDismissed() {
+                Log.d(TAG,"iron banner: onBannerAdScreenDismissed");
+            }
+
+            @Override
+            public void onBannerAdLeftApplication() {
+                Log.d(TAG,"iron banner: onBannerAdLeftApplication");
+            }
+        });
+    }
+
+    //MoPub Listener
+    @Override
+    public void onInterstitialLoaded(MoPubInterstitial interstitial) {
+        Log.d(TAG,"mopub: onInterstitialLoaded");
+
+    }
+
+    @Override
+    public void onInterstitialFailed(MoPubInterstitial interstitial, MoPubErrorCode errorCode) {
+        Log.d(TAG,"mopub: onInterstitialFailed");
+
+    }
+
+    @Override
+    public void onInterstitialShown(MoPubInterstitial interstitial) {
+        Log.d(TAG,"mopub: onInterstitialShown");
+
+    }
+
+    @Override
+    public void onInterstitialClicked(MoPubInterstitial interstitial) {
+        Log.d(TAG,"mopub: onInterstitialClicked");
+
+    }
+
+    @Override
+    public void onInterstitialDismissed(MoPubInterstitial interstitial) {
+        mopubInterstitial.load();
+        callAdmobInter();
+        Log.d(TAG,"mopub: onInterstitialDismissed");
+
     }
 
     public interface adsCallback {
@@ -318,8 +567,23 @@ public class adscontroller extends AppCompatActivity{
                     e.printStackTrace();
                 }
                 break;
+            case 6:
+                IronSource.loadInterstitial();
+                break;
+            case 7:
+                mopubInterstitial.load();
+                break;
         }
     }
+
+//    protected void onResume() {
+//        super.onResume();
+//        IronSource.onResume(this);
+//    }
+//    protected void onPause() {
+//        super.onPause();
+//        IronSource.onPause(this);
+//    }
 
     public void intentStar(int statut) {
 //        Toast.makeText(context, Admob_app_id, Toast.LENGTH_SHORT).show();
@@ -362,6 +626,25 @@ public class adscontroller extends AppCompatActivity{
                     break;
                 case 2:
                     callFaceInter();
+                    break;
+                case 6:
+                    Boolean IronSourcereadyinter = IronSource.isInterstitialReady();
+                    if (IronSourcereadyinter){
+                        IronSource.showInterstitial();
+                    }else{
+                        interCallBack();
+                        loadInterAds();
+                    }
+                    break;
+                case 7:
+                    if (mopubInterstitial != null) {
+                        if (mopubInterstitial.isReady()) {
+                            mopubInterstitial.show();
+                        } else {
+                            interCallBack();
+                            loadInterAds();
+                        }
+                    }
                     break;
                 default:
                     interCallBack();
@@ -483,6 +766,7 @@ public class adscontroller extends AppCompatActivity{
         nativeAdLayout.setVisibility(View.VISIBLE);
         nativeAd = new com.facebook.ads.NativeAd(context, Fb_native);
 
+
         nativeAd.setAdListener(new NativeAdListener() {
             @Override
             public void onMediaDownloaded(Ad ad) {
@@ -524,6 +808,8 @@ public class adscontroller extends AppCompatActivity{
         // Request an ad
         nativeAd.loadAd();
     }
+
+
 
     private void inflateAd(NativeAd nativeAd) {
 
@@ -769,6 +1055,34 @@ public class adscontroller extends AppCompatActivity{
 
         public config fb_native(String fb_native) {
             Fb_native = fb_native;
+            return this;
+        }
+
+        public config iron_appkey(String iron_app_key) {
+            iron_appkey = iron_app_key;
+            return this;
+        }
+
+        public config iron_inter(String iron_inters) {
+            iron_inter = iron_inters;
+            return this;
+        }
+
+        public config iron_banner(String iron_banners) {
+            iron_banner = iron_banners;
+            return this;
+        }
+
+        public config mopub_inter(String mopubs_inter) {
+            mopub_inter = mopubs_inter;
+            return this;
+        }
+        public config mopub_reward(String mopubs_reward) {
+            mopub_reward = mopubs_reward;
+            return this;
+        }
+        public config mopub_banner(String mopubs_banner) {
+            mopub_banner = mopubs_banner;
             return this;
         }
 //
